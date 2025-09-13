@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synapse Services</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background:#0e0e0e; color:#eee; overflow-x:hidden; line-height:1.6; }
+a { text-decoration:none; color:inherit; cursor:pointer; }
+/* Loader */
+#loader { position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:9999; visibility:hidden; opacity:0; transition:opacity 0.3s; }
+#loader.active { visibility:visible; opacity:1; }
+.spinner { border:6px solid #ccc; border-top:6px solid #0071e3; border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite; }
+@keyframes spin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+/* Header */
+header { display:flex; justify-content:space-between; align-items:center; padding:15px 40px; position: sticky; top:0; background: rgba(20,20,20,0.9); backdrop-filter: blur(12px); border-bottom:1px solid #333; z-index:999; }
+@keyframes bounce {0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.logo { font-weight:600; font-size:1.3rem; letter-spacing:-0.5px; animation: bounce 1s infinite; }
+.actions { display:flex; align-items:center; gap:20px; }
+.cart { font-size:1.2rem; cursor:pointer; position:relative; }
+.cart-count { position:absolute; top:-8px; right:-8px; background:#ff3b3f; color:#fff; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; }
+.tos-btn { background:#0071e3; padding:8px 18px; border-radius:20px; font-size:0.95rem; cursor:pointer; transition:background 0.3s; }
+.tos-btn:hover { background:#005bb5; }
+
+/* Hero */
+.hero { text-align:center; padding:60px 20px; }
+.hero h1 { font-size:3rem; font-weight:600; margin-bottom:15px; letter-spacing:-1px; }
+.hero p { font-size:1.2rem; color:#aaa; margin-bottom:30px; }
+
+/* Category cards */
+.categories { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:40px; max-width:1200px; margin:0 auto 60px; padding:0 20px; }
+.category-card { background:#1c1c1c; border-radius:16px; overflow:hidden; cursor:pointer; transition: transform 0.3s, box-shadow 0.3s; text-align:center; }
+.category-card:hover { transform: translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+.category-card img { width:100%; height:200px; object-fit:cover; }
+.category-card h3 { padding:15px 0; font-size:1.5rem; }
+
+/* Modal Panels */
+.category-panel-overlay, .tos-panel-overlay, .thankyou-overlay, .added-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; backdrop-filter: blur(8px); opacity:0; visibility:hidden; transition:opacity 0.3s; z-index:999; }
+.category-panel-overlay.active, .tos-panel-overlay.active, .thankyou-overlay.active, .added-overlay.active { opacity:1; visibility:visible; }
+.category-panel, .tos-panel, .thankyou-panel, .added-panel { background:#1c1c1c; border-radius:16px; padding:40px; max-width:1000px; width:90%; max-height:90%; overflow-y:auto; position:relative; z-index:1000; text-align:center; }
+.category-panel { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:30px; }
+.close-btn { position:absolute; top:20px; right:20px; font-size:1.5rem; background:transparent; border:none; color:#eee; cursor:pointer; transition:transform 0.2s; }
+.close-btn:hover { transform:scale(1.2); }
+
+/* Product Cards */
+.product { background:#2a2a2a; border-radius:16px; text-align:center; padding:20px; transition: transform 0.3s, box-shadow 0.3s; }
+.product:hover { transform: translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+.product img { width:100%; border-radius:12px; margin-bottom:20px; }
+.product h3 { font-size:1.5rem; font-weight:500; margin-bottom:10px; }
+.product p { color:#aaa; font-size:1rem; margin-bottom:15px; }
+.price { font-size:1.2rem; font-weight:bold; margin-bottom:15px; }
+.product button { background:#ff3b3f; border:none; padding:10px 24px; color:#fff; font-size:0.95rem; border-radius:25px; cursor:pointer; transition:background 0.3s, transform 0.3s, box-shadow 0.3s; }
+.product button:hover { background:#e23637; transform: scale(1.05); box-shadow:0 5px 15px rgba(0,0,0,0.5); }
+.animal-product img, .software-product img { height:250px; object-fit:cover; }
+.stock-count { color:#aaa; font-size:0.9rem; margin-bottom:10px; }
+
+/* Basket */
+#basketOverlay { position:fixed; top:0; right:0; width:400px; max-width:100%; height:100%; background:#1c1c1c; z-index:1000; transform:translateX(100%); transition:transform 0.3s; display:flex; flex-direction:column; padding:20px; border-radius:16px 0 0 16px; box-shadow:-5px 0 15px rgba(0,0,0,0.5); }
+#basketOverlay.active { transform:translateX(0); }
+#basketOverlay h2 { margin-bottom:20px; }
+.basket-item { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+.basket-item span { margin-left:10px; }
+.basket-item button.remove-btn { background:#444; color:#fff; border:none; border-radius:12px; padding:4px 10px; font-size:0.8rem; cursor:pointer; margin-left:10px; }
+.basket-item button.remove-btn:hover { background:#ff3b3f; }
+.basket-total { margin-top:auto; margin-bottom:20px; font-size:1.2rem; font-weight:bold; }
+.basket button { border:none; padding:12px 28px; font-size:1rem; border-radius:25px; cursor:pointer; transition: all 0.3s ease; margin-bottom:10px; }
+.basket button:hover { transform: scale(1.05); box-shadow:0 5px 15px rgba(0,0,0,0.5); }
+.basket-close { position:absolute; top:15px; right:15px; background:transparent; border:none; color:#fff; font-size:1.5rem; cursor:pointer; transition:transform 0.2s; }
+.basket-close:hover { transform:scale(1.2); }
+
+/* Thank you panel */
+.thankyou-panel h2 { margin-bottom:20px; font-size:2rem; }
+.thankyou-panel p { margin-bottom:15px; font-size:1.1rem; color:#aaa; }
+.thankyou-panel code { display:block; background:#2a2a2a; padding:10px; border-radius:8px; margin-bottom:20px; font-size:1.1rem; }
+
+/* Added to basket overlay */
+.added-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); display:flex; justify-content:center; align-items:center; opacity:0; visibility:hidden; transition:opacity 0.3s; z-index:9999; }
+.added-overlay.active { opacity:1; visibility:visible; }
+.added-panel { background:#1c1c1c; padding:40px; border-radius:16px; text-align:center; }
+.added-panel h2 { margin-bottom:20px; font-size:1.8rem; }
+.added-panel button { background:#0071e3; color:#fff; border:none; padding:12px 28px; border-radius:25px; font-size:1rem; cursor:pointer; margin-top:15px; transition:background 0.3s; }
+.added-panel button:hover { background:#005bb5; }
+
+/* Footer */
+footer { padding:40px 20px; text-align:center; font-size:0.9rem; color:#888; border-top:1px solid #333; }
+</style>
+
+<script src="https://www.paypal.com/sdk/js?client-id=AQgA5eP6NILBkKbp4VSD0JdJAjbPu9Auz-0x9Hnk4MulBliSBGtSNoticFJoUbSqre0uF31VbVX6V7Fv&components=buttons,hosted-fields"></script>
+</head>
+<body>
+
+<div id="loader"><div class="spinner"></div></div>
+
+<header>
+  <div class="logo">Synapse Services</div>
+  <div class="actions">
+    <div class="tos-btn" onclick="openTOS()">TOS</div>
+    <div class="cart" onclick="toggleBasket()">🛒<div class="cart-count" id="cartCount">0</div></div>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Welcome to the Amazon Of Digital Goods</h1>
+  <p>Your ultimate store for Software And Mods</p>
+</section>
+
+<section class="categories" id="mainContent">
+  <div class="category-card" data-category="gorilla" onclick="openCategory('gorilla')">
+    <img src="gorilla.png" alt="Gorilla Tag">
+    <h3>Gorilla Tag</h3>
+  </div>
+  <div class="category-card" data-category="animal" onclick="openCategory('animal')">
+    <img src="animal.png" alt="Animal Company">
+    <h3>Animal Company</h3>
+  </div>
+  <div class="category-card" data-category="software" onclick="openCategory('software')">
+    <img src="software.png" alt="Software">
+    <h3>Software</h3>
+  </div>
+</section>
+
+<div class="category-panel-overlay" id="categoryPanelOverlay">
+  <div class="category-panel" id="categoryPanel">
+    <button class="close-btn" onclick="closeCategory()">×</button>
+  </div>
+</div>
+
+<div class="tos-panel-overlay" id="tosPanelOverlay">
+  <div class="tos-panel" id="tosPanel">
+    <button class="close-btn" onclick="closeTOS()">×</button>
+    <h2>Synapse Services | Terms of Service</h2>
+    <p><br>1. No Refunds Shall Be Received No Matter The Reason<br><br>2. Purchases Are Final If You Are Unhappy With Your Product We Are Not To Blame<br><br>3. If Your Key Gets Shared And Redeemed You Are To Blame Keep Your Key Safe At All Times<br><br>4. If You Close The Page Before Saving Your License Key We Will Not Give You A New One We Are Not Eligable For Your Actions<br><br>5. Attempting To “Re-Sell” Keys Wont Work Once Redeemed They Can't Be Claimed Again Giving Them Out Before Your Own Use Is Your Own Fault<br><br>2025 Synapse Services Terms Of Services</p>
+  </div>
+</div>
+
+<div id="basketOverlay">
+  <button class="basket-close" onclick="toggleBasket()">×</button>
+  <h2>Your Basket</h2>
+  <div id="basketItems"></div>
+  <div class="basket-total" id="basketTotal">Total: $0</div>
+  <div id="paypal-button-container"></div>
+</div>
+
+<div class="thankyou-overlay" id="thankyouOverlay">
+  <div class="thankyou-panel">
+    <button class="close-btn" onclick="closeThankyou()">×</button>
+    <h2>Thank you for your purchase!</h2>
+    <p>Your license key:</p>
+    <code id="licenseKeyBox"></code>
+  </div>
+</div>
+
+<!-- Added overlay -->
+<div class="added-overlay" id="addedOverlay">
+  <div class="added-panel">
+    <h2>Successfully added to basket!</h2>
+    <button onclick="closeAdded()">OK</button>
+  </div>
+</div>
+
+<script>
+const productsData = {
+  gorilla: [
+    {id:'violet', img:'violet.png', title:'Violet Mod Menu', desc:'A Clean Cutting Edge Mod Menu Designed For Gorilla Tag Packed With Top Quality Mods With A Never Before Seen Menu Design.', price:9.99},
+    {id:'veil', img:'menu.png', title:'Veil.cc Mod Menu', desc:'A Overpowered Gorilla Tag Mod Menu Built To Perfection, Always Undetected, All Mods Are Great Quality.', price:9.99},
+  ],
+  animal: [
+    {id:'syntroid', img:'syntroid.png', title:'Syntroid Mod Menu', desc:'A Overpowered Animal Company Mod Menu With A Clean Menu/UI Design Packed With Features', price:3.50},
+    {id:'comingsoon', img:'soon.png', title:'Coming Soon', desc:'Not available yet.', price:0.00}
+  ],
+  software: [
+    {id:'steam', img:'steam.png', title:'Steam Game Generator', desc:'Generate Any Steam Game Instantly With Mutliple Features To The App And A Discord Bot For A Backup.', price:8.50},
+    {id:'comingsoon2', img:'soon.png', title:'Coming Soon', desc:'Not available yet.', price:0.00}
+  ]
+
+};
+
+
+
+let basket = [];
+
+function showLoaderAndRedirect(){ document.getElementById('loader').classList.add('active'); setTimeout(()=>{document.getElementById('loader').classList.remove('active');},800);}
+function addToBasket(item){ basket.push(item); updateBasketUI(); showAddedOverlay(); }
+function removeFromBasket(index){ basket.splice(index,1); updateBasketUI(); }
+
+function showAddedOverlay(){ document.getElementById("addedOverlay").classList.add("active"); document.getElementById('mainContent').style.filter='blur(5px)'; }
+function closeAdded(){ document.getElementById("addedOverlay").classList.remove("active"); document.getElementById('mainContent').style.filter='none'; }
+
+function updateBasketUI(){
+  const basketItems=document.getElementById('basketItems'); 
+  basketItems.innerHTML=''; 
+  let total=0;
+  basket.forEach((item,i)=>{
+    total+=item.price;
+    basketItems.innerHTML+=`<div class='basket-item'>${item.title} <span>$${item.price.toFixed(2)}</span> <button class="remove-btn" onclick="removeFromBasket(${i})">Remove</button></div>`;
+  });
+  document.getElementById('basketTotal').innerText=`Total: $${total.toFixed(2)}`;
+  document.getElementById('cartCount').innerText=basket.length;
+  renderPayPalButtons(total);
+}
+
+function toggleBasket(){ document.getElementById('basketOverlay').classList.toggle('active'); }
+
+async function openCategory(category){
+  showLoaderAndRedirect();
+  try{
+    const res = await fetch('/stock-status');
+    const stock = await res.json();
+    setTimeout(()=>{
+      const overlay=document.getElementById('categoryPanelOverlay');
+      const panel=document.getElementById('categoryPanel');
+      panel.innerHTML='<button class="close-btn" onclick="closeCategory()">×</button>'+
+        productsData[category].map(p=>{
+          const specialClass=category==='animal'||category==='software'?` ${category}-product`:'';
+          const stockCount = stock[p.id] || 0; // Show stock
+          const isOutOfStock = stockCount === 0;
+          return `<div class='product${specialClass}'>
+            <img src='${p.img}' alt='${p.title}'>
+            <h3>${p.title}</h3>
+            <p>${p.desc}</p>
+            <div class='stock-count'>In stock: ${stockCount}</div>
+            <div class='price'>$${p.price.toFixed(2)}</div>
+            ${
+              isOutOfStock 
+              ? "<button disabled style='background:gray;cursor:not-allowed;'>Out of Stock</button>" 
+              : `<button onclick='addToBasket({id:"${p.id}", title:"${p.title}", price:${p.price}})'>Add to Basket</button>`
+            }
+          </div>`;
+        }).join('');
+      overlay.classList.add('active'); 
+      document.getElementById('mainContent').style.filter='blur(5px)';
+    },800);
+  }catch(err){ console.error(err);}
+}
+
+function closeCategory(){ document.getElementById('categoryPanelOverlay').classList.remove('active'); document.getElementById('mainContent').style.filter='none'; }
+function openTOS(){ showLoaderAndRedirect(); setTimeout(()=>{document.getElementById('tosPanelOverlay').classList.add('active'); document.getElementById('mainContent').style.filter='blur(5px)';},800);}
+function closeTOS(){ document.getElementById('tosPanelOverlay').classList.remove('active'); document.getElementById('mainContent').style.filter='none'; }
+function closeThankyou(){ document.getElementById('thankyouOverlay').classList.remove('active'); }
+function showThankyou(key, productId){ document.getElementById('licenseKeyBox').innerText=key; document.getElementById('thankyouOverlay').classList.add('active'); }
+
+function renderPayPalButtons(total){
+  const container=document.getElementById('paypal-button-container');
+  container.innerHTML='';
+  if(total<=0) return;
+
+  paypal.Buttons({
+    style:{layout:'vertical', color:'gold', shape:'pill', label:'pay'},
+    createOrder:(data, actions)=> actions.order.create({purchase_units:[{amount:{value:total.toFixed(2)}}]}),
+    onApprove: async (data, actions)=>{
+      return actions.order.capture().then(async ()=>{
+        if(basket.length===0) return alert("No product in basket.");
+        const productId=basket[0].id;
+        try{
+          const res=await fetch("/get-key", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({productId})});
+          const result=await res.json();
+          if(result.status==="SUCCESS"){ showThankyou(result.key, productId); updateStockDisplay(); }
+          else{ alert("Sorry, this product is out of stock."); updateStockDisplay(); }
+        } catch(err){ console.error(err); alert("Error retrieving license key."); }
+        basket=[]; updateBasketUI();
+      });
+    },
+    onError: err=>{ console.error(err); alert("Payment could not be processed. Please try again."); }
+  }).render('#paypal-button-container');
+}
+
+async function updateStockDisplay(){
+  try{
+    const res = await fetch('/stock-status');
+    const stock = await res.json();
+    document.querySelectorAll('.category-card').forEach(card=>{
+      const category = card.getAttribute('data-category');
+      const hasStock = productsData[category].some(p=> stock[p.id] > 0 );
+      if(!hasStock){
+        card.querySelector('h3').innerText = `${category.charAt(0).toUpperCase()+category.slice(1)} (Out of Stock)`;
+        card.querySelector('h3').style.color = 'red';
+      }
+    });
+  }catch(err){ console.error('Error fetching stock:', err); }
+}
+
+window.addEventListener('load', updateStockDisplay);
+</script>
+
+
+<!-- Trust Box Section -->
+<section>
+  <div class="trust-box animated">
+    <h3>Why Synapse Services Should Be Trusted</h3>
+    <p>We provide verified digital products, secure payments, and responsive support. Hundreds Soon To Be THOUSANDS of satisfied customers rely on us every day!</p>
+    <ul>
+      <li>✅ Secure and encrypted transactions</li>
+      <li>✅ Instant license key delivery</li>
+      <li>✅ 24/7 support & guidance</li>
+      <li>✅ Verified and exclusive products</li>
+      <li>✅ High-performance, great infrastructure</li>
+    </ul>
+  </div>
+</section>
+
+<style>
+.trust-box {
+  background:#1c1c1c;
+  border:2px solid #333; /* dark gray border */
+  border-radius:16px;
+  padding:30px;
+  max-width:650px;
+  text-align:center;
+  transition: all 0.3s ease;
+  cursor:pointer;
+  margin:40px auto;
+  animation: bounce 2s infinite; /* match header bounce */
+}
+.trust-box:hover {
+  transform: scale(1.05);
+  background:#0071e3;
+  color:#fff;
+  border-color:#555;
+}
+.trust-box h3 {
+  margin-bottom:15px;
+  font-size:1.8rem;
+}
+.trust-box p {
+  font-size:1rem;
+  color:#aaa;
+  margin-bottom:15px;
+}
+.trust-box ul {
+  text-align:left;
+  list-style:none;
+  padding:0;
+  margin-top:15px;
+  color:#ccc;
+}
+.trust-box ul li {
+  margin-bottom:8px;
+  position:relative;
+  padding-left:25px;
+}
+.trust-box ul li::before {
+  content:"✓";
+  position:absolute;
+  left:0;
+  color:#00ffcc;
+  font-weight:bold;
+}
+.trust-box:hover ul li {
+  color:#fff;
+}
+@keyframes bounce {
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-5px);}
+}
+</style>
+
+<!-- New Professional Sections -->
+<section class="features" style="max-width:1200px;margin:60px auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:30px;padding:0 20px;">
+  <div class="feature-card" style="background:#1c1c1c;border-radius:16px;padding:25px;text-align:center;transition:transform 0.3s,box-shadow 0.3s;cursor:pointer;">
+    <h3>High-Tech Security</h3>
+    <p>All transactions are secured with advanced encryption to keep your data and purchases safe.</p>
+  </div>
+  <div class="feature-card" style="background:#1c1c1c;border-radius:16px;padding:25px;text-align:center;transition:transform 0.3s,box-shadow 0.3s;cursor:pointer;">
+    <h3>Optimized Performance</h3>
+    <p>Our infrastructure ensures instant license delivery, and zero downtime.</p>
+  </div>
+  <div class="feature-card" style="background:#1c1c1c;border-radius:16px;padding:25px;text-align:center;transition:transform 0.3s,box-shadow 0.3s;cursor:pointer;">
+    <h3>Expert Support</h3>
+    <p>Our support team is available 24/7 to guide you through setup, usage, and troubleshooting. Make Sure To Join https://discord.gg/Ga9x6QHcdD For Help</p>
+  </div>
+</section>
+
+<style>
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+}
+.feature-card h3 {
+  font-size:1.5rem;
+  margin-bottom:10px;
+}
+.feature-card p {
+  color:#aaa;
+  font-size:1rem;
+}
+</style>
+
+<section class="tech-stats" style="background:#0f0f0f;padding:60px 20px;text-align:center;">
+  <h2 style="font-size:2rem;margin-bottom:20px;">Tech Metrics</h2>
+  <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;">
+    <div style="min-width:150px;">
+      <h3 style="font-size:1.5rem;color:#00ffcc;">99.9%</h3>
+      <p style="color:#aaa;">Uptime Guaranteed</p>
+    </div>
+    <div style="min-width:150px;">
+      <h3 style="font-size:1.5rem;color:#00ffcc;">149+</h3>
+      <p style="color:#aaa;">Satisfied Customers</p>
+    </div>
+    <div style="min-width:150px;">
+      <h3 style="font-size:1.5rem;color:#00ffcc;">24/7</h3>
+      <p style="color:#aaa;">Customer Support</p>
+    </div>
+    <div style="min-width:150px;">
+      <h3 style="font-size:1.5rem;color:#00ffcc;">10ms</h3>
+      <p style="color:#aaa;">Average Web Response Time</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2025 Synapse Services. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
