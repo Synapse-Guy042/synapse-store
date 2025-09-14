@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 const app = express();
-const PORT = 3000;
+const PORT = 80;
 
 app.use(express.json());
 
@@ -90,3 +90,4 @@ app.get("/stock-status", (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
+
